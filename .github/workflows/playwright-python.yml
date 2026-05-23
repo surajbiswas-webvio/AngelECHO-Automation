@@ -1,0 +1,47 @@
+name: Playwright Python Tests
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          playwright install --with-deps
+
+      - name: Run smoke suite
+        env:
+          ENV: qa
+          HEADLESS: "true"
+          CUSTOMER_EMAIL: ${{ secrets.CUSTOMER_EMAIL }}
+          CUSTOMER_PASSWORD: ${{ secrets.CUSTOMER_PASSWORD }}
+        run: pytest -m smoke -n auto
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: automation-reports
+          path: |
+            reports/
+            screenshots/
+            logs/
+

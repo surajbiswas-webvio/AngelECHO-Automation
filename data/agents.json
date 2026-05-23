@@ -1,0 +1,18 @@
+{
+  "valid_agent": {
+    "name": "QA Voice Agent ${RUN_ID}",
+    "description": "Automation-created AI voice agent for regression coverage.",
+    "language": "en",
+    "stt_provider": "default",
+    "tts_provider": "default",
+    "voice": "default",
+    "prompt": "You are a concise customer support voice assistant. Confirm the caller intent before taking action."
+  },
+  "invalid_agent": {
+    "name": "",
+    "description": "",
+    "prompt": ""
+  },
+  "updated_prompt": "You are a helpful AI voice agent. Verify account context, answer clearly, and escalate when confidence is low."
+}
+
