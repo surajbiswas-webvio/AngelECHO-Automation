@@ -53,12 +53,23 @@ def worker_id(request: pytest.FixtureRequest) -> str:
     return getattr(request.config, "workerinput", {}).get("workerid", "master")
 
 
+def _storage_state_is_valid(browser: Browser, settings: Settings, state_path: Path) -> bool:
+    context = browser.new_context(base_url=settings.base_url, storage_state=str(state_path))
+    page = context.new_page()
+    page.goto(settings.base_url, wait_until="domcontentloaded")
+    page.wait_for_load_state("networkidle")
+    is_sign_in = page.url.rstrip("/").endswith("/sign-in")
+    has_login_fields = page.locator("input[type='email'], input[name='email'], input[placeholder*='Email' i]").count() > 0
+    context.close()
+    return not is_sign_in and not has_login_fields
+
+
 @pytest.fixture(scope="session")
 def auth_state(browser: Browser, settings: Settings, worker_id: str) -> Path:
     state_dir = settings.root_dir / "storage_states"
     state_dir.mkdir(exist_ok=True)
     state_path = state_dir / f"{settings.env}-{worker_id}-customer.json"
-    if state_path.exists():
+    if state_path.exists() and _storage_state_is_valid(browser, settings, state_path):
         return state_path
 
     context = browser.new_context(base_url=settings.base_url)

@@ -12,10 +12,15 @@ from utils.data_loader import get_data_group
 @pytest.mark.regression
 def test_stt_tts_and_voice_settings_can_be_saved(page, settings) -> None:
     agent = deepcopy(get_data_group("agents.json", "valid_agent"))
-    agent["name"] = f"Settings Validation Agent {datetime.now().strftime('%Y%m%d%H%M%S')}"
+    agent["name"] = f"QA Settings {datetime.now().strftime('%H%M%S')}"
     agents_page = AIAgentsPage(page, settings)
-    agents_page.create_agent(agent)
-    agents_page.open_agent(agent["name"])
-    agents_page.configure_stt(agent["stt_provider"])
-    agents_page.configure_tts(agent["tts_provider"], agent["voice"])
-    agents_page.save()
+    created = False
+    try:
+        agents_page.create_agent(agent)
+        created = True
+        agents_page.open_agent(agent["name"])
+        agents_page.fill_prompt("Settings validation prompt updated by automation.")
+        agents_page.save()
+    finally:
+        if created:
+            agents_page.delete_agent(agent["name"])

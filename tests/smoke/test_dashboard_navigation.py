@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+from pages.ai_agents_page import AIAgentsPage
 from pages.dashboard_page import DashboardPage
 from pages.navigation_page import NavigationPage
 
@@ -20,6 +21,6 @@ def test_primary_navigation_links(page, settings) -> None:
     nav = NavigationPage(page, settings)
     DashboardPage(page, settings).open()
     nav.go_to_agents()
+    AIAgentsPage(page, settings).expect_visible(page.get_by_role("heading", name="Agents Management"))
     nav.go_to_dashboard()
     nav.expect_sidebar_visible()
-

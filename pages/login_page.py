@@ -8,23 +8,33 @@ from pages.locators import LOGIN
 
 class LoginPage(BasePage):
     def open(self) -> None:
-        self.goto("/")
+        self.goto("/sign-in")
 
     def login(self, email: str, password: str) -> None:
         self.open()
         self.fill(LOGIN.email_input, email)
         self.fill(LOGIN.password_input, password)
         self.page.get_by_role("button", name=LOGIN.submit_button_name).click()
-        self.wait_for_page_ready()
+        self.page.wait_for_load_state("domcontentloaded")
+        self.page.wait_for_timeout(2000)
+        if self.page.url.rstrip("/").endswith("/sign-in"):
+            return
+        expect(self.page.get_by_text("New Customer's Workspace", exact=False).first).to_be_visible()
 
     def expect_login_error(self) -> None:
-        error = self.page.locator(LOGIN.error_message).first
-        expect(error).to_be_visible()
+        error = self.page.locator(LOGIN.error_message).or_(
+            self.page.get_by_text("username or password", exact=False)
+        )
+        expect(error.first).to_be_visible()
 
     def logout(self) -> None:
-        profile = self.page.locator("[data-testid='profile-menu'], button[aria-haspopup='menu']").first
-        if profile.is_visible():
-            profile.click()
-        self.page.get_by_text(LOGIN.logout_menu_text, exact=False).click()
+        profile_text = self.page.get_by_text("new_customer", exact=True)
+        expect(profile_text).to_be_visible()
+        profile_text.click()
+        logout = self.page.get_by_role("menuitem", name=LOGIN.logout_menu_text).or_(
+            self.page.get_by_text(LOGIN.logout_menu_text, exact=True)
+        )
+        expect(logout.first).to_be_visible()
+        logout.first.click()
+        self.page.wait_for_timeout(2000)
         self.expect_visible(LOGIN.email_input)
-

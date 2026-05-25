@@ -7,11 +7,11 @@ from pages.base_page import BasePage
 
 class DashboardPage(BasePage):
     def open(self) -> None:
-        self.goto("/dashboard")
+        self.goto("")
 
     def expect_loaded(self) -> None:
-        dashboard_text = self.page.get_by_role("heading", name="Dashboard").or_(
-            self.page.get_by_text("Dashboard", exact=False)
+        dashboard_text = self.page.get_by_role("heading", name="Live Calls").or_(
+            self.page.get_by_text("Live Calls", exact=False)
         )
         expect(dashboard_text.first).to_be_visible()
 

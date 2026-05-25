@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from playwright.sync_api import Locator, Page, expect
@@ -24,16 +25,16 @@ class BasePage:
 
     def wait_for_page_ready(self) -> None:
         self.page.wait_for_load_state("domcontentloaded")
-        self.page.wait_for_load_state("networkidle")
 
     def locator(self, selector: str) -> Locator:
         return self.page.locator(selector)
 
     def click(self, target: str | Locator) -> None:
         locator = target if isinstance(target, Locator) else self.page.locator(target)
-        expect(locator.first).to_be_visible()
-        expect(locator.first).to_be_enabled()
-        locator.first.click()
+        first = locator.first
+        expect(first).to_be_visible()
+        expect(first).to_be_enabled()
+        first.click()
 
     def fill(self, selector: str, value: str) -> None:
         field = self.page.locator(selector).first
@@ -59,6 +60,20 @@ class BasePage:
         locator = target if isinstance(target, Locator) else self.page.locator(target)
         expect(locator.first).not_to_be_visible()
 
+    def expect_url_contains(self, fragment: str) -> None:
+        expect(self.page).to_have_url(re.compile(f".*{re.escape(fragment)}.*"))
+
+    def open_combobox_by_text(self, text: str) -> None:
+        self.page.get_by_text(text, exact=True).click()
+
+    def close_dialog(self) -> None:
+        close = self.page.get_by_role("button", name="Close")
+        if close.count() > 0 and close.first.is_visible():
+            close.first.click()
+            return
+        cancel = self.page.get_by_role("button", name="Cancel")
+        if cancel.count() > 0 and cancel.first.is_visible():
+            cancel.first.click()
+
     def capture(self, name: str) -> Path:
         return capture_screenshot(self.page, name)
-

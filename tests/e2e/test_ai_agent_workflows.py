@@ -21,22 +21,26 @@ def _agent_payload() -> dict[str, str]:
 def test_create_search_update_and_delete_ai_agent(page, settings) -> None:
     agent = _agent_payload()
     agents_page = AIAgentsPage(page, settings)
+    created = False
 
-    agents_page.create_agent(agent)
-    agents_page.expect_agent_visible(agent["name"])
+    try:
+        agents_page.create_agent(agent)
+        created = True
+        agents_page.expect_agent_visible(agent["name"])
 
-    updated_prompt = get_data_group("agents.json", "updated_prompt")
-    agents_page.update_prompt(agent["name"], updated_prompt)
+        updated_prompt = get_data_group("agents.json", "updated_prompt")
+        agents_page.update_prompt(agent["name"], updated_prompt)
+        agents_page.open_agent(agent["name"])
+        agents_page.expect_visible(page.get_by_label("General Prompt", exact=True))
+    finally:
+        if created:
+            agents_page.delete_agent(agent["name"])
 
-    agents_page.delete_agent(agent["name"])
+    agents_page.expect_agent_not_visible(agent["name"])
 
 
 @pytest.mark.negative
 @pytest.mark.regression
 def test_agent_creation_requires_mandatory_fields(page, settings) -> None:
     agents_page = AIAgentsPage(page, settings)
-    agents_page.open()
-    agents_page.start_create_agent()
-    agents_page.save()
-    agents_page.expect_validation_error()
-
+    agents_page.expect_create_disabled_without_name()
