@@ -50,7 +50,7 @@ The default target is `staging`, which resolves to:
 
 ```text
 BASE_URL=https://staging-app.webvio.in/
-API_BASE_URL=https://staging-app.webvio.in/api
+API_BASE_URL=https://staging-api.angelecho.ai/v1
 ```
 
 Configuration precedence is: shell or CI environment variables, `.env`, environment-specific dotenv file, then `config/environments.yaml` defaults. To switch environments, set `ENV` or pass `--env`:

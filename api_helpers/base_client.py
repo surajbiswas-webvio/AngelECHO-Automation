@@ -19,7 +19,8 @@ class BaseApiClient:
             self.set_token(token)
 
     def set_token(self, token: str) -> None:
-        self.session.headers.update({"Authorization": f"Bearer {token}"})
+        authorization = token if token.lower().startswith("bearer ") else f"Bearer {token}"
+        self.session.headers.update({"Authorization": authorization})
 
     def request(self, method: str, path: str, **kwargs: Any) -> Response:
         url = self.settings.api_url_for(path)

@@ -1,6 +1,6 @@
 staging: &staging
   base_url: "https://staging-app.webvio.in/"
-  api_base_url: "https://staging-app.webvio.in/api"
+  api_base_url: "https://staging-api.angelecho.ai/v1"
   default_timeout_ms: 15000
   browser: "chromium"
   headless: true
