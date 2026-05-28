@@ -17,13 +17,13 @@ def test_logout_invalidates_ui_session(page, settings) -> None:
     DashboardPage(page, settings).open()
     page.evaluate("() => { localStorage.clear(); sessionStorage.clear(); }")
     page.context.clear_cookies()
-    page.goto(f"{settings.base_url.rstrip('/')}/", wait_until="domcontentloaded")
+    page.goto(settings.url_for(), wait_until="domcontentloaded")
     expect(page.locator("input[type='email'], input[name='email'], input[placeholder*='Email' i]").first).to_be_visible()
 
 
 @pytest.mark.permissions
 def test_customer_cannot_access_admin_route(page, settings) -> None:
-    page.goto(f"{settings.base_url.rstrip('/')}/admin", wait_until="domcontentloaded")
+    page.goto(settings.url_for("admin"), wait_until="domcontentloaded")
     unavailable = page.get_by_text("Forbidden", exact=False).or_(
         page.get_by_text("Unauthorized", exact=False)
     ).or_(page.get_by_text("Page Not Found", exact=True))

@@ -10,6 +10,7 @@ from playwright.sync_api import Browser, BrowserContext, Page, Playwright, sync_
 from api_helpers.base_client import BaseApiClient
 from config.settings import Settings, get_settings
 from pages.login_page import LoginPage
+from utils.config_manager import ConfigurationError
 from utils.logger import get_logger
 from utils.screenshot import capture_screenshot
 
@@ -27,10 +28,19 @@ def settings(pytestconfig: pytest.Config) -> Settings:
     env = pytestconfig.getoption("--env")
     if env:
         os.environ["ENV"] = env
-    resolved = get_settings()
+    try:
+        resolved = get_settings()
+    except ConfigurationError as exc:
+        logger.error("Invalid automation configuration: %s", exc)
+        pytest.exit(f"Invalid automation configuration: {exc}", returncode=2)
     if pytestconfig.getoption("--headed-mode"):
         os.environ["HEADLESS"] = "false"
-        resolved = get_settings()
+        try:
+            resolved = get_settings()
+        except ConfigurationError as exc:
+            logger.error("Invalid automation configuration: %s", exc)
+            pytest.exit(f"Invalid automation configuration: {exc}", returncode=2)
+    logger.info("Running automation against %s environment: %s", resolved.env, resolved.base_url)
     return resolved
 
 
@@ -56,7 +66,7 @@ def worker_id(request: pytest.FixtureRequest) -> str:
 def _storage_state_is_valid(browser: Browser, settings: Settings, state_path: Path) -> bool:
     context = browser.new_context(base_url=settings.base_url, storage_state=str(state_path))
     page = context.new_page()
-    page.goto(settings.base_url, wait_until="domcontentloaded")
+    page.goto(settings.url_for(), wait_until="domcontentloaded")
     page.wait_for_load_state("networkidle")
     is_sign_in = page.url.rstrip("/").endswith("/sign-in")
     has_login_fields = page.locator("input[type='email'], input[name='email'], input[placeholder*='Email' i]").count() > 0

@@ -2,15 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
-import yaml
-from dotenv import load_dotenv
 import os
 
+from utils.config_manager import ConfigManager
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
-load_dotenv(ROOT_DIR / ".env")
+CONFIG_MANAGER = ConfigManager(ROOT_DIR)
 
 
 def _as_bool(value: str | bool | None, default: bool = False) -> bool:
@@ -44,23 +42,30 @@ class Settings:
     admin_password: str | None
     root_dir: Path = ROOT_DIR
 
+    def url_for(self, path: str = "") -> str:
+        return ConfigManager.join_url(self.base_url, path)
 
-def _load_environment_defaults(env: str) -> dict[str, Any]:
-    path = ROOT_DIR / "config" / "environments.yaml"
-    with path.open("r", encoding="utf-8") as file:
-        environments = yaml.safe_load(file) or {}
-    if env not in environments:
-        raise ValueError(f"Environment '{env}' is not configured in {path}")
-    return environments[env]
+    def api_url_for(self, path: str = "") -> str:
+        return ConfigManager.join_url(self.api_base_url, path)
 
 
 def get_settings() -> Settings:
-    env = os.getenv("ENV", "qa")
-    defaults = _load_environment_defaults(env)
+    env = CONFIG_MANAGER.load_dotenv_files()
+    defaults = CONFIG_MANAGER.load_environment_defaults(env)
+    base_url = CONFIG_MANAGER.normalize_base_url(
+        CONFIG_MANAGER.get_value("BASE_URL", defaults, required=True) or "",
+        name="BASE_URL",
+    )
+    api_base_url = CONFIG_MANAGER.get_value("API_BASE_URL", defaults)
+    if api_base_url:
+        api_base_url = CONFIG_MANAGER.normalize_base_url(api_base_url, name="API_BASE_URL")
+    else:
+        api_base_url = ConfigManager.join_url(base_url, "api/")
+
     return Settings(
         env=env,
-        base_url=os.getenv("BASE_URL", defaults["base_url"]),
-        api_base_url=os.getenv("API_BASE_URL", defaults["api_base_url"]),
+        base_url=base_url,
+        api_base_url=api_base_url,
         browser=os.getenv("BROWSER", defaults.get("browser", "chromium")),
         headless=_as_bool(os.getenv("HEADLESS"), defaults.get("headless", True)),
         default_timeout_ms=_as_int(os.getenv("DEFAULT_TIMEOUT_MS"), defaults.get("default_timeout_ms", 15000)),
@@ -72,4 +77,3 @@ def get_settings() -> Settings:
         admin_email=os.getenv("ADMIN_EMAIL") or None,
         admin_password=os.getenv("ADMIN_PASSWORD") or None,
     )
-

@@ -1,4 +1,4 @@
-qa:
+staging: &staging
   base_url: "https://staging-app.webvio.in/"
   api_base_url: "https://staging-app.webvio.in/api"
   default_timeout_ms: 15000
@@ -6,9 +6,12 @@ qa:
   headless: true
   slow_mo_ms: 0
 
-staging:
-  base_url: "https://staging-app.webvio.in/"
-  api_base_url: "https://staging-app.webvio.in/api"
+qa:
+  <<: *staging
+
+prod:
+  base_url: ""
+  api_base_url: ""
   default_timeout_ms: 15000
   browser: "chromium"
   headless: true

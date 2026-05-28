@@ -22,7 +22,7 @@ class BaseApiClient:
         self.session.headers.update({"Authorization": f"Bearer {token}"})
 
     def request(self, method: str, path: str, **kwargs: Any) -> Response:
-        url = f"{self.settings.api_base_url.rstrip('/')}/{path.lstrip('/')}"
+        url = self.settings.api_url_for(path)
         response = self.session.request(method=method, url=url, timeout=30, **kwargs)
         self.logger.info("%s %s -> %s", method.upper(), url, response.status_code)
         response.raise_for_status()
@@ -39,4 +39,3 @@ class BaseApiClient:
 
     def delete(self, path: str, **kwargs: Any) -> Response:
         return self.request("DELETE", path, **kwargs)
-

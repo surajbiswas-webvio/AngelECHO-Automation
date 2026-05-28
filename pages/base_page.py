@@ -18,7 +18,7 @@ class BasePage:
         self.page.set_default_timeout(settings.default_timeout_ms)
 
     def goto(self, path: str = "") -> None:
-        url = f"{self.settings.base_url.rstrip('/')}/{path.lstrip('/')}"
+        url = self.settings.url_for(path)
         self.logger.info("Navigating to %s", url)
         self.page.goto(url, wait_until="domcontentloaded")
         self.wait_for_page_ready()

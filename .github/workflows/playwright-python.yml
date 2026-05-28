@@ -29,7 +29,7 @@ jobs:
 
       - name: Run smoke suite
         env:
-          ENV: qa
+          ENV: staging
           HEADLESS: "true"
           CUSTOMER_EMAIL: ${{ secrets.CUSTOMER_EMAIL }}
           CUSTOMER_PASSWORD: ${{ secrets.CUSTOMER_PASSWORD }}
@@ -44,4 +44,3 @@ jobs:
             reports/
             screenshots/
             logs/
-

@@ -1,4 +1,4 @@
-# Angel ECHP Automation Framework
+# Angel ECHO Automation Framework
 
 Enterprise Playwright Python automation framework for the Echo Customer AI Voice Agent portal.
 
@@ -33,6 +33,35 @@ Copy-Item .env.example .env
 
 Update `.env` for the target environment. Keep real credentials in local `.env` or CI secrets.
 
+## Environment Configuration
+
+Runtime configuration is centralized in:
+
+```text
+config/settings.py          Settings dataclass used by tests, fixtures, pages, and API clients
+utils/config_manager.py     .env loading, URL normalization, and runtime validation
+config/environments.yaml    Committed non-secret environment defaults
+.env.example                Local override template
+.env.staging.example        Staging template
+.env.prod.example           Production template with URLs intentionally blank
+```
+
+The default target is `staging`, which resolves to:
+
+```text
+BASE_URL=https://staging-app.webvio.in/
+API_BASE_URL=https://staging-app.webvio.in/api
+```
+
+Configuration precedence is: shell or CI environment variables, `.env`, environment-specific dotenv file, then `config/environments.yaml` defaults. To switch environments, set `ENV` or pass `--env`:
+
+```powershell
+pytest --env staging
+$env:ENV="staging"; pytest -m smoke
+```
+
+Pages should navigate through `settings.url_for("path")` or `BasePage.goto("path")`. API clients should use `settings.api_url_for("path")`. `BASE_URL` is validated at startup and the run fails with a clear configuration error if it is missing or not an absolute HTTP(S) URL.
+
 ## Run Tests
 
 ```powershell
@@ -42,7 +71,7 @@ pytest -m regression
 pytest -m e2e
 pytest -m api
 pytest --headed-mode
-pytest --env qa
+pytest --env staging
 ```
 
 Run in parallel:
@@ -72,7 +101,7 @@ allure serve reports/allure-results
 - Retry support through `pytest-rerunfailures`.
 - Parallel execution through `pytest-xdist`.
 - API helper layer ready for backend setup and validation.
-- GitHub Actions and Jenkins examples included.
+- GitHub Actions workflow included.
 
 ## Maintenance Practices
 
@@ -82,7 +111,7 @@ allure serve reports/allure-results
 - Mark suites intentionally: `smoke`, `regression`, `e2e`, `api`, `negative`, `permissions`, `session`, `ui`.
 - Avoid fixed sleeps. Use Playwright locators, assertions, and load states.
 - Keep one assertion theme per test so failures are diagnostic.
-- Store secrets only in `.env`, GitHub secrets, Jenkins credentials, or a vault.
+- Store secrets only in `.env`, GitHub secrets, or a vault.
 - Review reports, traces, screenshots, and logs together for failure triage.
 
 ## Scaling Recommendations
