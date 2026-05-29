@@ -38,6 +38,9 @@ class Settings:
     video_on_failure: bool
     customer_email: str
     customer_password: str
+    user_email: str
+    user_password: str
+    authenticated_shell_text: str
     admin_email: str | None
     admin_password: str | None
     root_dir: Path = ROOT_DIR
@@ -62,6 +65,9 @@ def get_settings() -> Settings:
     else:
         api_base_url = ConfigManager.join_url(base_url, "api/")
 
+    user_email = os.getenv("VENDOR_EMAIL") or os.getenv("CUSTOMER_EMAIL", "new_customer@yopmail.com")
+    user_password = os.getenv("VENDOR_PASSWORD") or os.getenv("CUSTOMER_PASSWORD", "Test@123")
+
     return Settings(
         env=env,
         base_url=base_url,
@@ -72,8 +78,11 @@ def get_settings() -> Settings:
         slow_mo_ms=_as_int(os.getenv("SLOW_MO_MS"), defaults.get("slow_mo_ms", 0)),
         trace_on_failure=_as_bool(os.getenv("TRACE_ON_FAILURE"), True),
         video_on_failure=_as_bool(os.getenv("VIDEO_ON_FAILURE"), False),
-        customer_email=os.getenv("CUSTOMER_EMAIL", "new_customer@yopmail.com"),
-        customer_password=os.getenv("CUSTOMER_PASSWORD", "Test@123"),
+        customer_email=user_email,
+        customer_password=user_password,
+        user_email=user_email,
+        user_password=user_password,
+        authenticated_shell_text=CONFIG_MANAGER.get_value("AUTHENTICATED_SHELL_TEXT", defaults) or "",
         admin_email=os.getenv("ADMIN_EMAIL") or None,
         admin_password=os.getenv("ADMIN_PASSWORD") or None,
     )

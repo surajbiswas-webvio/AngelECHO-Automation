@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 from pathlib import Path
 from typing import Generator
 
@@ -67,24 +68,31 @@ def _storage_state_is_valid(browser: Browser, settings: Settings, state_path: Pa
     context = browser.new_context(base_url=settings.base_url, storage_state=str(state_path))
     page = context.new_page()
     page.goto(settings.url_for(), wait_until="domcontentloaded")
-    page.wait_for_load_state("networkidle")
+    try:
+        page.wait_for_load_state("networkidle", timeout=5000)
+    except Exception:
+        logger.info("Storage-state validation continued before networkidle because the app keeps background requests open.")
     is_sign_in = page.url.rstrip("/").endswith("/sign-in")
-    has_login_fields = page.locator("input[type='email'], input[name='email'], input[placeholder*='Email' i]").count() > 0
+    has_login_fields = page.locator("input[type='email'], input[name='email'], input[placeholder*='Email' i], input[name='password']").count() > 0
+    has_shell_text = True
+    if settings.authenticated_shell_text:
+        has_shell_text = page.get_by_text(settings.authenticated_shell_text, exact=False).count() > 0
     context.close()
-    return not is_sign_in and not has_login_fields
+    return not is_sign_in and not has_login_fields and has_shell_text
 
 
 @pytest.fixture(scope="session")
 def auth_state(browser: Browser, settings: Settings, worker_id: str) -> Path:
     state_dir = settings.root_dir / "storage_states"
     state_dir.mkdir(exist_ok=True)
-    state_path = state_dir / f"{settings.env}-{worker_id}-customer.json"
+    safe_user = re.sub(r"[^a-zA-Z0-9]+", "-", settings.user_email).strip("-").lower() or "user"
+    state_path = state_dir / f"{settings.env}-{worker_id}-{safe_user}.json"
     if state_path.exists() and _storage_state_is_valid(browser, settings, state_path):
         return state_path
 
     context = browser.new_context(base_url=settings.base_url)
     page = context.new_page()
-    LoginPage(page, settings).login(settings.customer_email, settings.customer_password)
+    LoginPage(page, settings).login(settings.user_email, settings.user_password, require_success=True)
     context.storage_state(path=str(state_path))
     context.close()
     return state_path
