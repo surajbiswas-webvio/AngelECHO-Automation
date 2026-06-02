@@ -30,23 +30,19 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 @pytest.fixture(scope="session")
 def settings(pytestconfig: pytest.Config) -> Settings:
     env = pytestconfig.getoption("--env")
-    if env:
-        os.environ["ENV"] = env
+    if env is not None:
+        os.environ["ENV"] = str(env)
     portal = pytestconfig.getoption("--portal") or _infer_portal_from_args(pytestconfig.args)
-    if portal:
-        os.environ["PORTAL"] = portal
+    if portal is not None:
+        os.environ["PORTAL"] = str(portal)
+    if pytestconfig.getoption("--headed-mode"):
+        os.environ["HEADLESS"] = "false"
+
     try:
         resolved = get_settings()
     except ConfigurationError as exc:
         logger.error("Invalid automation configuration: %s", exc)
         pytest.exit(f"Invalid automation configuration: {exc}", returncode=2)
-    if pytestconfig.getoption("--headed-mode"):
-        os.environ["HEADLESS"] = "false"
-        try:
-            resolved = get_settings()
-        except ConfigurationError as exc:
-            logger.error("Invalid automation configuration: %s", exc)
-            pytest.exit(f"Invalid automation configuration: {exc}", returncode=2)
     logger.info("Running %s portal automation against %s environment: %s", resolved.portal, resolved.env, resolved.base_url)
     return resolved
 
