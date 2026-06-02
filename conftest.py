@@ -1,5 +1,13 @@
 from __future__ import annotations
 
+"""Pytest framework wiring for browser, session, and API test execution.
+
+This module centralizes command-line options, environment resolution,
+Playwright lifecycle management, authenticated storage-state reuse, and
+failure artifacts. Keeping these fixtures in one place gives UI, API, smoke,
+regression, and vendor workflows the same runtime behavior.
+"""
+
 import os
 import re
 from pathlib import Path
@@ -20,12 +28,47 @@ logger = get_logger("conftest")
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
+    """
+    Purpose:
+        Registers automation-specific pytest command-line options.
+
+    Why Needed:
+        Allows engineers and CI jobs to choose the target environment and
+        headed/headless browser mode without changing test code.
+
+    Args:
+        parser: Pytest parser used to add custom CLI flags.
+
+    Returns:
+        None. Options are registered on the supplied parser.
+
+    Notes:
+        Values are later consumed by the `settings` fixture.
+    """
     parser.addoption("--env", action="store", default=None, help="Target environment from config/environments.yaml")
     parser.addoption("--headed-mode", action="store_true", default=False, help="Run browser in headed mode")
 
 
 @pytest.fixture(scope="session")
 def settings(pytestconfig: pytest.Config) -> Settings:
+    """
+    Purpose:
+        Builds the immutable runtime settings object for the test session.
+
+    Why Needed:
+        Provides a single validated source of truth for URLs, credentials,
+        browser options, timeouts, and artifact behavior across all tests.
+
+    Args:
+        pytestconfig: Active pytest configuration containing CLI options.
+
+    Returns:
+        A validated Settings instance for the selected environment.
+
+    Notes:
+        Exits pytest with a configuration error when required environment
+        values are missing or malformed.
+    """
     env = pytestconfig.getoption("--env")
     if env:
         os.environ["ENV"] = env
@@ -47,12 +90,47 @@ def settings(pytestconfig: pytest.Config) -> Settings:
 
 @pytest.fixture(scope="session")
 def playwright_instance() -> Generator[Playwright, None, None]:
+    """
+    Purpose:
+        Starts and yields the Playwright driver for the test session.
+
+    Why Needed:
+        Avoids repeated Playwright startup cost while ensuring the driver is
+        closed after the session completes.
+
+    Args:
+        None.
+
+    Returns:
+        Generator yielding a Playwright instance.
+
+    Notes:
+        The context manager owns Playwright cleanup.
+    """
     with sync_playwright() as playwright:
         yield playwright
 
 
 @pytest.fixture(scope="session")
 def browser(playwright_instance: Playwright, settings: Settings) -> Generator[Browser, None, None]:
+    """
+    Purpose:
+        Launches the configured browser once per pytest session.
+
+    Why Needed:
+        Shares browser startup cost across tests while keeping per-test
+        isolation at the browser-context level.
+
+    Args:
+        playwright_instance: Session-scoped Playwright driver.
+        settings: Runtime browser configuration.
+
+    Returns:
+        Generator yielding a Playwright Browser.
+
+    Notes:
+        Browser type, headless mode, and slow motion are environment driven.
+    """
     browser_type = getattr(playwright_instance, settings.browser)
     browser = browser_type.launch(headless=settings.headless, slow_mo=settings.slow_mo_ms)
     yield browser
@@ -61,10 +139,47 @@ def browser(playwright_instance: Playwright, settings: Settings) -> Generator[Br
 
 @pytest.fixture(scope="session")
 def worker_id(request: pytest.FixtureRequest) -> str:
+    """
+    Purpose:
+        Resolves the pytest-xdist worker identifier for storage-state names.
+
+    Why Needed:
+        Prevents parallel workers from writing to the same authentication file.
+
+    Args:
+        request: Fixture request containing pytest worker metadata.
+
+    Returns:
+        Worker id such as `gw0`, or `master` for non-xdist runs.
+
+    Notes:
+        The value is safe to use in generated artifact filenames.
+    """
     return getattr(request.config, "workerinput", {}).get("workerid", "master")
 
 
 def _storage_state_is_valid(browser: Browser, settings: Settings, state_path: Path) -> bool:
+    """
+    Purpose:
+        Verifies that a saved Playwright storage state still represents a
+        logged-in application session.
+
+    Why Needed:
+        Reusing valid auth state avoids repetitive UI login, but stale state
+        must be detected before tests depend on it.
+
+    Args:
+        browser: Browser used to create a temporary validation context.
+        settings: Environment settings containing base URL and shell marker.
+        state_path: Existing storage-state JSON file to validate.
+
+    Returns:
+        True when the state opens an authenticated shell; otherwise False.
+
+    Notes:
+        Network-idle is best-effort because some apps keep background polling
+        requests open after page load.
+    """
     context = browser.new_context(base_url=settings.base_url, storage_state=str(state_path))
     page = context.new_page()
     page.goto(settings.url_for(), wait_until="domcontentloaded")
@@ -83,6 +198,25 @@ def _storage_state_is_valid(browser: Browser, settings: Settings, state_path: Pa
 
 @pytest.fixture(scope="session")
 def auth_state(browser: Browser, settings: Settings, worker_id: str) -> Path:
+    """
+    Purpose:
+        Provides a reusable authenticated Playwright storage-state file.
+
+    Why Needed:
+        Authenticated UI tests need a logged-in session, and persisting storage
+        state reduces test runtime and login flakiness.
+
+    Args:
+        browser: Session browser used for validation and login.
+        settings: Runtime credentials and environment configuration.
+        worker_id: Unique pytest worker id for parallel-safe state files.
+
+    Returns:
+        Path to a valid storage-state JSON file.
+
+    Notes:
+        Creates a fresh state via LoginPage when no valid cached state exists.
+    """
     state_dir = settings.root_dir / "storage_states"
     state_dir.mkdir(exist_ok=True)
     safe_user = re.sub(r"[^a-zA-Z0-9]+", "-", settings.user_email).strip("-").lower() or "user"
@@ -100,6 +234,27 @@ def auth_state(browser: Browser, settings: Settings, worker_id: str) -> Path:
 
 @pytest.fixture()
 def context(browser: Browser, settings: Settings, auth_state: Path, request: pytest.FixtureRequest) -> Generator[BrowserContext, None, None]:
+    """
+    Purpose:
+        Creates an isolated authenticated browser context for each test.
+
+    Why Needed:
+        Keeps cookies, local storage, tracing, and optional video artifacts
+        scoped to the current test while reusing the session browser.
+
+    Args:
+        browser: Session-scoped Playwright browser.
+        settings: Runtime artifact and timeout configuration.
+        auth_state: Path to reusable authenticated storage state.
+        request: Pytest request used to inspect test outcome.
+
+    Returns:
+        Generator yielding an authenticated BrowserContext.
+
+    Notes:
+        Failure traces are saved only when `TRACE_ON_FAILURE` is enabled and
+        the call phase fails.
+    """
     video_dir = settings.root_dir / "reports" / "videos"
     context = browser.new_context(
         base_url=settings.base_url,
@@ -124,6 +279,25 @@ def context(browser: Browser, settings: Settings, auth_state: Path, request: pyt
 
 @pytest.fixture()
 def page(context: BrowserContext, settings: Settings, request: pytest.FixtureRequest) -> Generator[Page, None, None]:
+    """
+    Purpose:
+        Opens a fresh authenticated page for each UI test.
+
+    Why Needed:
+        Page-level isolation keeps workflows independent while sharing the
+        already-authenticated browser context.
+
+    Args:
+        context: Per-test authenticated browser context.
+        settings: Runtime settings, kept available for fixture symmetry.
+        request: Pytest request used to capture screenshots on failure.
+
+    Returns:
+        Generator yielding a Playwright Page.
+
+    Notes:
+        Screenshots are captured after failed test calls for debugging.
+    """
     page = context.new_page()
     yield page
     failed = getattr(request.node, "rep_call", None) and request.node.rep_call.failed
@@ -134,6 +308,24 @@ def page(context: BrowserContext, settings: Settings, request: pytest.FixtureReq
 
 @pytest.fixture()
 def unauthenticated_page(browser: Browser, settings: Settings) -> Generator[Page, None, None]:
+    """
+    Purpose:
+        Opens a fresh browser page without stored authentication.
+
+    Why Needed:
+        Login, logout, and protected-route tests must validate unauthenticated
+        behavior independently from the shared auth-state fixture.
+
+    Args:
+        browser: Session-scoped Playwright browser.
+        settings: Runtime base URL and timeout configuration.
+
+    Returns:
+        Generator yielding an unauthenticated Playwright Page.
+
+    Notes:
+        The temporary browser context is closed after the test.
+    """
     context = browser.new_context(base_url=settings.base_url)
     context.set_default_timeout(settings.default_timeout_ms)
     page = context.new_page()
@@ -143,11 +335,46 @@ def unauthenticated_page(browser: Browser, settings: Settings) -> Generator[Page
 
 @pytest.fixture()
 def api_client(settings: Settings) -> BaseApiClient:
+    """
+    Purpose:
+        Creates a base API client configured for the active environment.
+
+    Why Needed:
+        API tests and helper clients require consistent base URL, headers, and
+        timeout behavior.
+
+    Args:
+        settings: Runtime API configuration.
+
+    Returns:
+        BaseApiClient instance without an authentication token.
+
+    Notes:
+        Tests can set a token later or instantiate specialized API clients.
+    """
     return BaseApiClient(settings)
 
 
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_makereport(item: pytest.Item, call: pytest.CallInfo[None]):
+    """
+    Purpose:
+        Stores each pytest phase report on the test item.
+
+    Why Needed:
+        Fixtures running teardown code need to know whether the test call
+        failed so they can conditionally save screenshots, traces, and videos.
+
+    Args:
+        item: Current pytest test item.
+        call: Pytest call information for setup, call, or teardown phase.
+
+    Returns:
+        Hook generator result controlled by pytest.
+
+    Notes:
+        The `rep_call` attribute is consumed by page/context teardown logic.
+    """
     outcome = yield
     report = outcome.get_result()
     setattr(item, f"rep_{report.when}", report)

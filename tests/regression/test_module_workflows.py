@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Regression coverage for customer module validation and read-only workflows."""
+
 import pytest
 
 from pages.billing_page import BillingPage
@@ -13,6 +15,7 @@ from pages.support_page import SupportPage
 
 @pytest.mark.regression
 def test_phone_number_purchase_dialog_requires_selection(page, settings) -> None:
+    """Verify phone-number purchase cannot proceed until a number is selected."""
     phone_numbers = PhoneNumbersPage(page, settings)
     phone_numbers.open()
     phone_numbers.search_numbers("000000")
@@ -23,6 +26,7 @@ def test_phone_number_purchase_dialog_requires_selection(page, settings) -> None
 @pytest.mark.regression
 @pytest.mark.negative
 def test_campaign_creation_requires_lead_recipients(page, settings) -> None:
+    """Verify campaign creation is blocked when no lead recipients are available."""
     outbound = OutboundPage(page, settings)
     outbound.open()
     outbound.search_campaigns("qa-campaign")
@@ -33,6 +37,7 @@ def test_campaign_creation_requires_lead_recipients(page, settings) -> None:
 @pytest.mark.regression
 @pytest.mark.negative
 def test_compliance_upload_dialog_exposes_required_document_controls(page, settings) -> None:
+    """Verify compliance upload exposes required document and file controls."""
     compliance = CompliancePage(page, settings)
     compliance.open()
     compliance.expect_documents_empty_state()
@@ -43,6 +48,7 @@ def test_compliance_upload_dialog_exposes_required_document_controls(page, setti
 @pytest.mark.regression
 @pytest.mark.negative
 def test_member_invitation_requires_valid_email(page, settings) -> None:
+    """Verify member invites require syntactically valid email addresses."""
     members = MembersPage(page, settings)
     members.open()
     members.search_members(settings.customer_email)
@@ -53,6 +59,7 @@ def test_member_invitation_requires_valid_email(page, settings) -> None:
 
 @pytest.mark.regression
 def test_support_ticket_form_accepts_required_fields_without_submission(page, settings) -> None:
+    """Verify support ticket required fields enable submission without submitting."""
     support = SupportPage(page, settings)
     support.open()
     support.search_tickets("qa-ticket")
@@ -67,6 +74,7 @@ def test_support_ticket_form_accepts_required_fields_without_submission(page, se
 
 @pytest.mark.regression
 def test_billing_and_pricing_surfaces_are_usable(page, settings) -> None:
+    """Verify billing tabs and pricing details render without workflow submission."""
     billing = BillingPage(page, settings)
     billing.open()
     billing.expect_usage_metrics()
