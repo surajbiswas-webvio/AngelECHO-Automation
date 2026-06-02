@@ -71,7 +71,8 @@ def settings(pytestconfig: pytest.Config) -> Settings:
     """
     env = pytestconfig.getoption("--env")
     if env:
-        os.environ["ENV"] = env
+        # ensure value assigned to environment is a string for type checkers
+        os.environ["ENV"] = str(env)
     try:
         resolved = get_settings()
     except ConfigurationError as exc:
