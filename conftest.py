@@ -8,12 +8,14 @@ from typing import Generator
 import pytest
 from playwright.sync_api import Browser, BrowserContext, Page, Playwright, sync_playwright
 
-from api_helpers.base_client import BaseApiClient
+from common.api.base_client import BaseApiClient
+from common.auth.admin_auth import admin_auth
 from config.settings import Settings, get_settings
-from pages.login_page import LoginPage
-from utils.config_manager import ConfigurationError
-from utils.logger import get_logger
-from utils.screenshot import capture_screenshot
+from common.auth.customer_auth import customer_auth
+from common.auth.vendor_auth import vendor_auth
+from common.utils.config_manager import ConfigurationError
+from common.utils.logger import get_logger
+from common.utils.screenshot import capture_screenshot
 
 
 logger = get_logger("conftest")
@@ -21,6 +23,7 @@ logger = get_logger("conftest")
 
 def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addoption("--env", action="store", default=None, help="Target environment from config/environments.yaml")
+    parser.addoption("--portal", action="store", default=None, choices=("admin", "vendor", "customer"), help="Target application portal")
     parser.addoption("--headed-mode", action="store_true", default=False, help="Run browser in headed mode")
 
 
@@ -29,6 +32,9 @@ def settings(pytestconfig: pytest.Config) -> Settings:
     env = pytestconfig.getoption("--env")
     if env:
         os.environ["ENV"] = env
+    portal = pytestconfig.getoption("--portal") or _infer_portal_from_args(pytestconfig.args)
+    if portal:
+        os.environ["PORTAL"] = portal
     try:
         resolved = get_settings()
     except ConfigurationError as exc:
@@ -41,8 +47,19 @@ def settings(pytestconfig: pytest.Config) -> Settings:
         except ConfigurationError as exc:
             logger.error("Invalid automation configuration: %s", exc)
             pytest.exit(f"Invalid automation configuration: {exc}", returncode=2)
-    logger.info("Running automation against %s environment: %s", resolved.env, resolved.base_url)
+    logger.info("Running %s portal automation against %s environment: %s", resolved.portal, resolved.env, resolved.base_url)
     return resolved
+
+
+def _infer_portal_from_args(args: list[str]) -> str | None:
+    normalized_args = [arg.replace("\\", "/").lower() for arg in args]
+    if any("portals/vendor" in arg for arg in normalized_args):
+        return "vendor"
+    if any("portals/admin" in arg for arg in normalized_args):
+        return "admin"
+    if any("portals/customer" in arg for arg in normalized_args):
+        return "customer"
+    return None
 
 
 @pytest.fixture(scope="session")
@@ -86,15 +103,16 @@ def auth_state(browser: Browser, settings: Settings, worker_id: str) -> Path:
     state_dir = settings.root_dir / "storage_states"
     state_dir.mkdir(exist_ok=True)
     safe_user = re.sub(r"[^a-zA-Z0-9]+", "-", settings.user_email).strip("-").lower() or "user"
-    state_path = state_dir / f"{settings.env}-{worker_id}-{safe_user}.json"
+    state_path = state_dir / f"{settings.env}-{settings.portal}-{worker_id}-{safe_user}.json"
     if state_path.exists() and _storage_state_is_valid(browser, settings, state_path):
         return state_path
 
-    context = browser.new_context(base_url=settings.base_url)
-    page = context.new_page()
-    LoginPage(page, settings).login(settings.user_email, settings.user_password, require_success=True)
-    context.storage_state(path=str(state_path))
-    context.close()
+    auth_flows = {
+        "admin": admin_auth,
+        "vendor": vendor_auth,
+        "customer": customer_auth,
+    }
+    auth_flows[settings.portal](browser, settings, state_path)
     return state_path
 
 

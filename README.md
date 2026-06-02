@@ -1,25 +1,49 @@
 # Angel ECHO Automation Framework
 
-Enterprise Playwright Python automation framework for the Echo Customer AI Voice Agent portal.
+Enterprise Playwright Python automation framework for the Angel ECHO Admin, Vendor, and Customer portals.
 
 ## Architecture
 
 ```text
-api_helpers/            API clients for auth, agents, and backend setup
-config/                 Environment configuration and runtime settings
-data/                   JSON/YAML test data
-fixtures/               Reserved for domain-specific reusable fixtures
-pages/                  Page Object Model classes and centralized locators
-tests/api/              API checks
-tests/e2e/              End-to-end workflows
-tests/regression/       Broader regression scenarios
-tests/smoke/            Deployment confidence suite
-utils/                  Logging, assertions, screenshots, data loading
-reports/                HTML, Allure, trace, and video outputs
-screenshots/            Failure screenshots
-logs/                   Rotating automation logs
-storage_states/         Reusable Playwright authenticated sessions
+portals/
+  admin/
+    pages/          Admin Portal page objects
+    tests/          Admin Portal test suites
+    fixtures/       Admin-only fixtures
+    data/           Admin-only test data
+  vendor/
+    pages/          Vendor Portal page objects
+    tests/          Vendor Portal test suites
+    fixtures/       Vendor-only fixtures
+    data/           Vendor-only test data
+  customer/
+    pages/          Customer Portal page objects
+    tests/          Customer Portal test suites
+    fixtures/       Customer-only fixtures
+    data/           Customer-only test data
+
+common/
+  api/              Shared API clients
+  auth/             Shared login page plus admin/vendor/customer auth flows
+  base_pages/       Shared Playwright Page Object base classes
+  components/       Shared locators and reusable UI component objects
+  helpers/          Cross-portal helper modules
+  utils/            Logging, assertions, screenshots, data loading, config helpers
+
+config/             Runtime settings and environment defaults
+reports/            HTML, Allure, trace, and video outputs
+screenshots/        Failure screenshots
+logs/               Rotating automation logs
+storage_states/     Reusable Playwright authenticated sessions by env, portal, worker, and user
 ```
+
+## Where Code Belongs
+
+Add portal-specific test files under `portals/<portal>/tests`. Add portal-specific page objects under `portals/<portal>/pages`.
+
+Put code in `common` only when at least two portals can reuse it, or when it is framework infrastructure such as auth, config, logging, API clients, base pages, reporting helpers, screenshots, or shared UI components.
+
+Keep shared workflows thin and explicit. For example, `common/auth/vendor_auth.py`, `common/auth/customer_auth.py`, and `common/auth/admin_auth.py` each own their portal login flow while reusing `common/auth/login_page.py`.
 
 ## Setup
 
@@ -38,59 +62,60 @@ Update `.env` for the target environment. Keep real credentials in local `.env` 
 Runtime configuration is centralized in:
 
 ```text
-config/settings.py          Settings dataclass used by tests, fixtures, pages, and API clients
-utils/config_manager.py     .env loading, URL normalization, and runtime validation
-config/environments.yaml    Committed non-secret environment defaults
-.env.example                Local override template
-.env.staging.example        Staging template
-.env.prod.example           Production template with URLs intentionally blank
+config/settings.py              Settings dataclass used by tests, fixtures, pages, and API clients
+common/utils/config_manager.py  .env loading, URL normalization, and runtime validation
+config/environments.yaml        Committed non-secret environment defaults
+.env.example                    Local override template
+.env.staging.example            Staging template
+.env.prod.example               Production template with URLs intentionally blank
 ```
 
-The default target is `staging`, which resolves to:
+Supported portal URLs:
 
 ```text
-BASE_URL=https://staging-app.webvio.in/
-API_BASE_URL=https://staging-api.angelecho.ai/v1
+ADMIN_BASE_URL
+VENDOR_BASE_URL
+CUSTOMER_BASE_URL
 ```
 
-Configuration precedence is: shell or CI environment variables, `.env`, environment-specific dotenv file, then `config/environments.yaml` defaults. To switch environments, set `ENV` or pass `--env`:
+Select a portal with `PORTAL` or `--portal`:
 
 ```powershell
-pytest --env staging
-$env:ENV="staging"; pytest -m smoke
+$env:PORTAL="customer"; pytest portals/customer/tests
+pytest --portal vendor portals/vendor/tests
+pytest --portal admin portals/admin/tests
 ```
 
-Pages should navigate through `settings.url_for("path")` or `BasePage.goto("path")`. API clients should use `settings.api_url_for("path")`. `BASE_URL` is validated at startup and the run fails with a clear configuration error if it is missing or not an absolute HTTP(S) URL.
+A pytest session targets one portal because authentication storage state and browser context are session-scoped. Run Customer, Vendor, and Admin suites as separate pytest commands in CI.
 
 ## Run Tests
 
 ```powershell
-pytest
-pytest -m smoke
-pytest -m regression
-pytest -m e2e
-pytest -m api
-pytest --headed-mode
-pytest --env staging
+pytest portals/customer/tests
+pytest portals/customer/tests -m smoke
+pytest portals/customer/tests -m regression
+pytest portals/customer/tests -m e2e
+pytest portals/customer/tests -m api
+pytest --headed-mode --portal customer portals/customer/tests
 ```
 
 Run the Vendor Portal suite:
 
 ```powershell
-$env:ENV="vendor_staging"
+$env:PORTAL="vendor"
 $env:VENDOR_EMAIL="<vendor email>"
 $env:VENDOR_PASSWORD="<vendor password>"
-pytest tests/vendor
-pytest tests/vendor -m smoke
-pytest tests/vendor -m crud
-pytest tests/vendor -n 2
+pytest portals/vendor/tests
+pytest portals/vendor/tests -m smoke
+pytest portals/vendor/tests -m crud
+pytest portals/vendor/tests -n 2
 ```
 
 Run in parallel:
 
 ```powershell
-pytest -n auto
-pytest -m smoke -n 4
+pytest --portal customer portals/customer/tests -n auto
+pytest --portal vendor portals/vendor/tests -m smoke -n 4
 ```
 
 Generate reports:
@@ -104,50 +129,33 @@ allure serve reports/allure-results
 ## Framework Capabilities
 
 - Playwright sync API with Pytest.
-- Page Object Model with shared `BasePage`.
-- Centralized selectors in `pages/locators.py`.
+- Portal-wise Page Object Model under `portals/<portal>/pages`.
+- Shared `BasePage` in `common/base_pages/base_page.py`.
+- Shared selectors in `common/components/locators.py`.
 - Environment configuration through `.env` and `config/environments.yaml`.
-- Data-driven JSON/YAML fixtures under `data/`.
-- Session reuse via Playwright `storage_state` per xdist worker.
+- Portal-scoped JSON/YAML fixtures under `portals/<portal>/data`.
+- Session reuse via Playwright `storage_state` per environment, portal, xdist worker, and user.
 - Failure screenshots, Playwright traces, rotating logs, HTML reports, and Allure results.
 - Retry support through `pytest-rerunfailures`.
 - Parallel execution through `pytest-xdist`.
-- API helper layer ready for backend setup and validation.
+- Shared API helper layer under `common/api`.
 - GitHub Actions workflow included.
 
-## Vendor Portal Coverage
+## Portal Coverage
 
-Vendor automation is organized under `tests/vendor` with page objects under `pages/vendor_*`.
+Customer automation lives under `portals/customer` and covers login, dashboard navigation, accessible modules, AI agent workflows, settings validation, session/permission checks, and agents API checks.
 
-Covered vendor modules:
+Vendor automation lives under `portals/vendor` and covers dashboard navigation, leads CRUD, demo agents, earnings, pricing, team management, performance, support, profile, session checks, reporting artifacts, and xdist-compatible worker state.
 
-- Dashboard navigation, KPI cards, and recent lead entry points.
-- My Leads create, read/details, update, search, empty-state, required-field, table, pagination, and row action coverage.
-- Demo Agents search and manage action availability.
-- Earnings status filters and commission table checks.
-- Coupons & Rates and Plans & Pricing read/action surfaces.
-- Team Management tabs, owner-visible controls, invite validation, direct-add form, and member editor availability.
-- Performance table checks.
-- Help & Support ticket validation, search/details, and attachment upload control.
-- Profile edit controls and change-password enable/validation behavior.
-- Session handling through reusable storage state, unauthenticated protected-route redirect, screenshots, HTML/Allure output, traces on failure, and xdist-compatible worker state.
+Admin automation should be added under `portals/admin` using the existing folder structure. Put Admin-only pages/tests/data there, and promote reusable logic into `common` only when another portal benefits from it.
 
 ## Maintenance Practices
 
-- Prefer stable `data-testid` attributes for all selectors. Add them in the product when possible.
+- Prefer stable `data-testid` attributes for selectors. Add them in the product when possible.
 - Keep page objects workflow-oriented and tests assertion-oriented.
 - Use API helpers to create and clean test data whenever UI setup becomes slow.
-- Mark suites intentionally: `smoke`, `regression`, `e2e`, `api`, `negative`, `permissions`, `session`, `ui`.
+- Mark suites intentionally: `admin`, `vendor`, `customer`, `smoke`, `regression`, `e2e`, `api`, `negative`, `permissions`, `session`, `ui`.
 - Avoid fixed sleeps. Use Playwright locators, assertions, and load states.
 - Keep one assertion theme per test so failures are diagnostic.
 - Store secrets only in `.env`, GitHub secrets, or a vault.
 - Review reports, traces, screenshots, and logs together for failure triage.
-
-## Scaling Recommendations
-
-- Add product-level `data-testid` hooks for login, dashboard cards, AI agent forms, STT/TTS controls, voice selectors, prompts, search, delete dialogs, and toast notifications.
-- Build API cleanup routines for agents created during tests.
-- Split long E2E tests into API setup plus focused UI validations where possible.
-- Add contract tests for auth, agents, permissions, and settings APIs.
-- Run smoke on every deployment, regression nightly, and full cross-browser suites before major releases.
-- Introduce visual checks only for stable pages and keep them separate from functional regression.

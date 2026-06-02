@@ -1,5 +1,8 @@
 staging: &staging
-  base_url: "https://staging-app.webvio.in/"
+  portal: "customer"
+  customer_base_url: "https://staging-app.webvio.in/"
+  vendor_base_url: "https://staging-vendor.webvio.in/"
+  admin_base_url: "https://staging-admin.webvio.in/"
   api_base_url: "https://staging-api.angelecho.ai/v1"
   default_timeout_ms: 15000
   browser: "chromium"
@@ -10,7 +13,10 @@ qa:
   <<: *staging
 
 vendor_staging:
-  base_url: "https://staging-vendor.webvio.in/"
+  portal: "vendor"
+  customer_base_url: "https://staging-app.webvio.in/"
+  vendor_base_url: "https://staging-vendor.webvio.in/"
+  admin_base_url: "https://staging-admin.webvio.in/"
   api_base_url: "https://staging-api.angelecho.ai/v1"
   default_timeout_ms: 15000
   browser: "chromium"
@@ -19,7 +25,10 @@ vendor_staging:
   authenticated_shell_text: "Vendor Portal"
 
 prod:
-  base_url: ""
+  portal: "customer"
+  customer_base_url: ""
+  vendor_base_url: ""
+  admin_base_url: ""
   api_base_url: ""
   default_timeout_ms: 15000
   browser: "chromium"
