@@ -27,8 +27,7 @@ common/
   auth/             Shared login page plus admin/vendor/customer auth flows
   base_pages/       Shared Playwright Page Object base classes
   components/       Shared locators and reusable UI component objects
-  helpers/          Cross-portal helper modules
-  utils/            Logging, assertions, screenshots, data loading, config helpers
+  utils/            Logging, screenshots, data loading, config helpers
 
 config/             Runtime settings and environment defaults
 reports/            HTML, Allure, trace, and video outputs

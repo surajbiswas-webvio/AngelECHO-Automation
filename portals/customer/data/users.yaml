@@ -1,8 +1,0 @@
-customer:
-  email: "${CUSTOMER_EMAIL}"
-  password: "${CUSTOMER_PASSWORD}"
-
-admin:
-  email: "${ADMIN_EMAIL}"
-  password: "${ADMIN_PASSWORD}"
-
