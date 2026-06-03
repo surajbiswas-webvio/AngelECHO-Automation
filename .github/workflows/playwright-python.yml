@@ -3,9 +3,9 @@ name: Playwright Python Tests
 on:
   workflow_dispatch:
   push:
-    branches: ["main", "master"]
+    branches: ["main"]
   pull_request:
-    branches: ["main", "master"]
+    branches: ["main"]
 
 jobs:
   test:
@@ -31,8 +31,8 @@ jobs:
         env:
           ENV: staging
           HEADLESS: "true"
-          CUSTOMER_EMAIL: ${{ secrets.CUSTOMER_EMAIL }}
-          CUSTOMER_PASSWORD: ${{ secrets.CUSTOMER_PASSWORD }}
+          CUSTOMER_EMAIL: "suraj.biswas@webviotechnologies.com"
+          CUSTOMER_PASSWORD: SurajBiswas@1995
         run: pytest -m smoke -n auto
 
       - name: Upload reports
