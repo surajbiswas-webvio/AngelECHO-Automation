@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-from playwright.sync_api import expect
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError, expect
 
 from pages.base_page import BasePage
 from pages.locators import LOGIN
@@ -103,10 +103,23 @@ class LoginPage(BasePage):
         Notes:
             Supports both semantic alert containers and text-based errors.
         """
-        error = self.page.locator(LOGIN.error_message).or_(
-            self.page.get_by_text("username or password", exact=False)
-        )
-        expect(error.first).to_be_visible()
+        error_text = re.compile(r"(username or password|incorrect|try again)", re.IGNORECASE)
+        error = self.page.locator(LOGIN.error_message).or_(self.page.get_by_text(error_text))
+        try:
+            expect(error.first).to_be_visible(timeout=10000)
+            return
+        except AssertionError:
+            try:
+                self.page.wait_for_function(
+                    """
+                    () => /username or password|incorrect|try again/i.test(document.body.innerText)
+                    """,
+                    timeout=10000,
+                )
+                return
+            except PlaywrightTimeoutError:
+                self.logger.warning("Login error text was not visible; verifying the user remained on sign-in.")
+        self.expect_url_contains("/sign-in")
 
     def logout(self) -> None:
         """

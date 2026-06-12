@@ -104,6 +104,10 @@ class Settings:
     authenticated_shell_text: str
     admin_email: str | None
     admin_password: str | None
+    mcp_enabled: bool
+    mcp_server_command: str | None
+    mcp_server_args: tuple[str, ...]
+    mcp_screenshot_dir: Path
     root_dir: Path = ROOT_DIR
 
     def url_for(self, path: str = "") -> str:
@@ -198,4 +202,12 @@ def get_settings() -> Settings:
         authenticated_shell_text=CONFIG_MANAGER.get_value("AUTHENTICATED_SHELL_TEXT", defaults) or "",
         admin_email=os.getenv("ADMIN_EMAIL") or None,
         admin_password=os.getenv("ADMIN_PASSWORD") or None,
+        mcp_enabled=_as_bool(os.getenv("MCP_ENABLED"), _as_bool(defaults.get("mcp_enabled"), False)),
+        mcp_server_command=CONFIG_MANAGER.get_value("MCP_SERVER_COMMAND", defaults),
+        mcp_server_args=tuple(
+            arg.strip()
+            for arg in (CONFIG_MANAGER.get_value("MCP_SERVER_ARGS", defaults) or "").split()
+            if arg.strip()
+        ),
+        mcp_screenshot_dir=ROOT_DIR / (CONFIG_MANAGER.get_value("MCP_SCREENSHOT_DIR", defaults) or "reports/mcp-screenshots"),
     )

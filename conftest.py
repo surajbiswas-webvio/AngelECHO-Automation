@@ -18,6 +18,9 @@ from playwright.sync_api import Browser, BrowserContext, Page, Playwright, sync_
 
 from api_helpers.base_client import BaseApiClient
 from config.settings import Settings, get_settings
+from mcp.browser_manager import MCPBrowserManager
+from mcp.playwright_client import PlaywrightMCPClient
+from mcp.tools import PlaywrightMCPTools
 from pages.login_page import LoginPage
 from utils.config_manager import ConfigurationError
 from utils.logger import get_logger
@@ -354,6 +357,109 @@ def api_client(settings: Settings) -> BaseApiClient:
         Tests can set a token later or instantiate specialized API clients.
     """
     return BaseApiClient(settings)
+
+
+@pytest.fixture(scope="session")
+def mcp_client(settings: Settings) -> Generator[PlaywrightMCPClient, None, None]:
+    """
+    Purpose:
+        Provides the optional Playwright MCP server client for the test session.
+
+    Why Needed:
+        MCP-enabled tests may call tools exposed by an external Playwright MCP
+        server. When no server command is configured, this fixture still yields
+        a client in local mode so the rest of the MCP helpers can be used.
+
+    Args:
+        settings: Runtime MCP configuration from `.env` and YAML defaults.
+
+    Returns:
+        Generator yielding PlaywrightMCPClient.
+
+    Notes:
+        The client closes any server process it starts during teardown.
+    """
+    client = PlaywrightMCPClient(settings)
+    client.connect()
+    yield client
+    client.close()
+
+
+@pytest.fixture()
+def mcp_browser_manager(
+    browser: Browser,
+    settings: Settings,
+) -> Generator[MCPBrowserManager, None, None]:
+    """
+    Purpose:
+        Creates a per-test manager for MCP browser contexts and pages.
+
+    Why Needed:
+        MCP tools need pages for inspection and screenshots, but simple MCP
+        validation should not force an application login.
+
+    Args:
+        browser: Session-scoped Playwright Browser.
+        settings: Runtime framework configuration.
+    Returns:
+        Generator yielding MCPBrowserManager without saved authentication.
+
+    Notes:
+        Contexts opened through the manager are closed after each test.
+    """
+    manager = MCPBrowserManager(browser, settings)
+    yield manager
+    manager.close_all()
+
+
+@pytest.fixture()
+def mcp_authenticated_browser_manager(
+    browser: Browser,
+    settings: Settings,
+    auth_state: Path,
+) -> Generator[MCPBrowserManager, None, None]:
+    """
+    Purpose:
+        Creates a per-test MCP manager that reuses authenticated storage state.
+
+    Why Needed:
+        Authenticated MCP workflows should use the same login/session handling
+        as normal UI tests instead of logging in manually.
+
+    Args:
+        browser: Session-scoped Playwright Browser.
+        settings: Runtime framework configuration.
+        auth_state: Existing authenticated storage-state JSON path.
+
+    Returns:
+        Generator yielding MCPBrowserManager with saved authentication.
+
+    Notes:
+        Request this fixture when the MCP page must open logged in.
+    """
+    manager = MCPBrowserManager(browser, settings, auth_state)
+    yield manager
+    manager.close_all()
+
+
+@pytest.fixture()
+def mcp_tools(settings: Settings, mcp_client: PlaywrightMCPClient) -> PlaywrightMCPTools:
+    """
+    Purpose:
+        Provides beginner-friendly MCP actions to tests and debugging scripts.
+
+    Why Needed:
+        Test authors can request one fixture for navigation, locator discovery,
+        screenshots, page-state debugging, and optional external MCP calls.
+
+    Args:
+        settings: Runtime framework configuration.
+        mcp_client: Optional external MCP JSON-RPC client.
+
+    Returns:
+        PlaywrightMCPTools instance.
+    """
+    return PlaywrightMCPTools(settings, mcp_client)
 
 
 @pytest.hookimpl(hookwrapper=True)
