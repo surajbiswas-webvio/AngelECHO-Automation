@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Smoke coverage for customer portal module accessibility and table structure."""
+
 import pytest
 
 from pages.module_page import MODULES, ModulePage
@@ -9,11 +11,13 @@ from pages.module_page import MODULES, ModulePage
 @pytest.mark.ui
 @pytest.mark.parametrize("module", MODULES, ids=[module.name for module in MODULES])
 def test_authenticated_user_can_open_accessible_modules(page, settings, module) -> None:
+    """Verify each registered customer module opens for an authenticated user."""
     ModulePage(page, settings).expect_module_loaded(module)
 
 
 @pytest.mark.smoke
 def test_core_data_tables_render_expected_headers(page, settings) -> None:
+    """Verify core customer data tables expose their expected column headers."""
     modules = ModulePage(page, settings)
 
     modules.open_module(next(module for module in MODULES if module.name == "All Agents"))

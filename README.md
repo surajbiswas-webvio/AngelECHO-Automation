@@ -9,6 +9,7 @@ api_helpers/            API clients for auth, agents, and backend setup
 config/                 Environment configuration and runtime settings
 data/                   JSON/YAML test data
 fixtures/               Reserved for domain-specific reusable fixtures
+mcp/                    Playwright MCP client, browser manager, and tools
 pages/                  Page Object Model classes and centralized locators
 tests/api/              API checks
 tests/e2e/              End-to-end workflows
@@ -113,7 +114,29 @@ allure serve reports/allure-results
 - Retry support through `pytest-rerunfailures`.
 - Parallel execution through `pytest-xdist`.
 - API helper layer ready for backend setup and validation.
+- Optional Playwright MCP helper layer for page inspection, locator discovery, screenshots, and external MCP server calls.
 - GitHub Actions workflow included.
+
+## Playwright MCP
+
+MCP support lives under `mcp/` and is available through pytest fixtures:
+
+```python
+def test_debug_dashboard(mcp_authenticated_browser_manager, mcp_tools):
+    page = mcp_authenticated_browser_manager.open_page("/dashboard")
+    debug_state = mcp_tools.debug_page_state(page)
+    assert debug_state["url"]
+```
+
+Use `mcp_browser_manager` for unauthenticated pages and `mcp_authenticated_browser_manager` for pages that should reuse the framework's saved login state. Use `mcp_tools.navigate(page, "/path")` for framework-aware navigation, `mcp_tools.inspect_element(page, "selector")` to understand an element, `mcp_tools.discover_locators(page)` to find stable locator candidates, and `mcp_tools.capture_screenshot(page)` for MCP debugging screenshots.
+
+If your team runs an external Playwright MCP server, set `MCP_ENABLED=true`, `MCP_SERVER_COMMAND`, and optional `MCP_SERVER_ARGS`. If no server command is set, the local Playwright MCP helpers still work.
+
+Run MCP validation checks:
+
+```powershell
+pytest tests/mcp -m mcp
+```
 
 ## Vendor Portal Coverage
 

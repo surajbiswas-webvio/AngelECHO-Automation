@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Logging factory used by fixtures, page objects, and API helpers."""
+
 import logging
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
@@ -8,6 +10,24 @@ from config.settings import ROOT_DIR
 
 
 def get_logger(name: str) -> logging.Logger:
+    """
+    Purpose:
+        Creates or returns a configured project logger.
+
+    Why Needed:
+        Standardizes log formatting, file rotation, and console output across
+        the automation framework.
+
+    Args:
+        name: Logger name, usually the class or module requesting logging.
+
+    Returns:
+        Configured logging.Logger instance.
+
+    Notes:
+        Existing handlers are reused to avoid duplicate log lines when modules
+        are imported multiple times.
+    """
     logger = logging.getLogger(name)
     if logger.handlers:
         return logger
@@ -36,4 +56,3 @@ def get_logger(name: str) -> logging.Logger:
     logger.addHandler(stream_handler)
     logger.propagate = False
     return logger
-

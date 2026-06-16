@@ -5,6 +5,8 @@ staging: &staging
   browser: "chromium"
   headless: true
   slow_mo_ms: 0
+  mcp_enabled: false
+  mcp_screenshot_dir: "reports/mcp-screenshots"
 
 qa:
   <<: *staging
@@ -17,6 +19,8 @@ vendor_staging:
   headless: true
   slow_mo_ms: 0
   authenticated_shell_text: "Vendor Portal"
+  mcp_enabled: false
+  mcp_screenshot_dir: "reports/mcp-screenshots"
 
 prod:
   base_url: ""
@@ -25,3 +29,5 @@ prod:
   browser: "chromium"
   headless: true
   slow_mo_ms: 0
+  mcp_enabled: false
+  mcp_screenshot_dir: "reports/mcp-screenshots"

@@ -1,10 +1,17 @@
 from __future__ import annotations
 
+"""Centralized locator constants for shared UI areas.
+
+Locator dataclasses group resilient selectors by feature so page objects can
+reuse names instead of duplicating selector strings.
+"""
+
 from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
 class LoginLocators:
+    """Purpose: Defines reusable selectors for authentication workflows."""
     email_input: str = "input[type='email'], input[name='email'], input[placeholder*='Email' i]"
     password_input: str = "input[type='password'], input[name='password'], input[placeholder*='Password' i]"
     submit_button_name: str = "Sign In"
@@ -14,6 +21,7 @@ class LoginLocators:
 
 @dataclass(frozen=True)
 class NavigationLocators:
+    """Purpose: Defines reusable selectors and labels for primary navigation."""
     sidebar: str = "aside, nav, [data-testid='sidebar']"
     dashboard_link_name: str = "Dashboard"
     agents_link_name: str = "All Agents"
@@ -23,6 +31,7 @@ class NavigationLocators:
 
 @dataclass(frozen=True)
 class AgentLocators:
+    """Purpose: Defines reusable selectors and control labels for agent workflows."""
     create_button_name: str = "Create Agent"
     create_confirm_button_name: str = "Create"
     save_button_name: str = "Save Agent"
