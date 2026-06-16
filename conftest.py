@@ -12,6 +12,7 @@ import os
 import re
 from pathlib import Path
 from typing import Generator
+from urllib.parse import urlparse
 
 import pytest
 from playwright.sync_api import Browser, BrowserContext, Page, Playwright, sync_playwright
@@ -191,9 +192,10 @@ def _storage_state_is_valid(browser: Browser, settings: Settings, state_path: Pa
         page.wait_for_load_state("networkidle", timeout=5000)
     except Exception:
         logger.info("Storage-state validation continued before networkidle because the app keeps background requests open.")
-    is_sign_in = page.url.rstrip("/").endswith("/sign-in")
+    parsed_url = urlparse(page.url)
+    is_sign_in = parsed_url.path.rstrip("/") == "/sign-in"
     has_login_fields = page.locator("input[type='email'], input[name='email'], input[placeholder*='Email' i], input[name='password']").count() > 0
-    has_shell_text = True
+    has_shell_text = False
     if settings.authenticated_shell_text:
         has_shell_text = page.get_by_text(settings.authenticated_shell_text, exact=False).count() > 0
     context.close()

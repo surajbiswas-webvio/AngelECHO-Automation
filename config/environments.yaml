@@ -5,6 +5,7 @@ staging: &staging
   browser: "chromium"
   headless: true
   slow_mo_ms: 0
+  authenticated_shell_text: "New Customer's Workspace"
   mcp_enabled: false
   mcp_screenshot_dir: "reports/mcp-screenshots"
 

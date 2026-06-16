@@ -3,6 +3,7 @@ from __future__ import annotations
 """Page object for sign-in and sign-out workflows."""
 
 import re
+from urllib.parse import urlparse
 
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError, expect
 
@@ -79,7 +80,7 @@ class LoginPage(BasePage):
         except AssertionError:
             if require_success:
                 raise
-        if self.page.url.rstrip("/").endswith("/sign-in"):
+        if urlparse(self.page.url).path.rstrip("/") == "/sign-in":
             return
         if self.settings.authenticated_shell_text:
             expect(self.page.get_by_text(self.settings.authenticated_shell_text, exact=False).first).to_be_visible()
