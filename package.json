@@ -1,0 +1,18 @@
+{
+  "name": "angelecho-playwright-ts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TypeScript Playwright automation framework for AngelECHO customer portal.",
+  "scripts": {
+    "test": "playwright test",
+    "test:smoke": "playwright test --grep @smoke",
+    "test:dashboard": "playwright test tests-ts/dashboard.spec.ts",
+    "test:agents": "playwright test tests-ts/agents.spec.ts",
+    "test:ui": "playwright test tests-ts/full-ui.spec.ts",
+    "report": "playwright show-report reports/playwright-html"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.45.0",
+    "typescript": "^5.5.0"
+  }
+}

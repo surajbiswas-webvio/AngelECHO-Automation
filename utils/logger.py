@@ -3,6 +3,8 @@ from __future__ import annotations
 """Logging factory used by fixtures, page objects, and API helpers."""
 
 import logging
+import os
+import tempfile
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
@@ -41,12 +43,22 @@ def get_logger(name: str) -> logging.Logger:
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
-    file_handler = RotatingFileHandler(
-        log_dir / "automation.log",
-        maxBytes=5_000_000,
-        backupCount=5,
-        encoding="utf-8",
-    )
+    try:
+        file_handler = RotatingFileHandler(
+            log_dir / "automation.log",
+            maxBytes=5_000_000,
+            backupCount=5,
+            encoding="utf-8",
+        )
+    except PermissionError:
+        fallback_dir = Path(tempfile.gettempdir()) / "angelecho-automation-logs"
+        fallback_dir.mkdir(exist_ok=True)
+        file_handler = RotatingFileHandler(
+            fallback_dir / f"automation-{os.getpid()}.log",
+            maxBytes=5_000_000,
+            backupCount=2,
+            encoding="utf-8",
+        )
     file_handler.setFormatter(formatter)
 
     stream_handler = logging.StreamHandler()
