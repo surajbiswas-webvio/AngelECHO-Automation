@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from playwright.sync_api import expect
 
-from pages.base_page import BasePage
+from pages.vendor_base_page import VendorBasePage
 
 
 @dataclass(frozen=True)
@@ -32,7 +32,7 @@ VENDOR_MODULES: tuple[VendorModuleDefinition, ...] = (
 )
 
 
-class VendorModulePage(BasePage):
+class VendorModulePage(VendorBasePage):
     """Purpose: Provides reusable checks for vendor portal modules."""
 
     def expect_authenticated_shell(self) -> None:

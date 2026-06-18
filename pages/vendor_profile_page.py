@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from playwright.sync_api import expect
 
-from pages.base_page import BasePage
+from pages.vendor_base_page import VendorBasePage
 
 
-class VendorProfilePage(BasePage):
+class VendorProfilePage(VendorBasePage):
     """Purpose: Encapsulates vendor profile edit and change-password checks."""
 
     def open(self) -> None:

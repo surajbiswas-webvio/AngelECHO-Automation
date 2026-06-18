@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from playwright.sync_api import expect
 
-from pages.base_page import BasePage
+from pages.vendor_base_page import VendorBasePage
 
 
 @dataclass(frozen=True)
@@ -24,7 +24,7 @@ class VendorLead:
     notes: str = "Created by vendor automation"
 
 
-class VendorLeadsPage(BasePage):
+class VendorLeadsPage(VendorBasePage):
     """Purpose: Encapsulates vendor lead list, create, view, edit, and search actions."""
 
     def open(self) -> None:

@@ -6,10 +6,10 @@ from pathlib import Path
 
 from playwright.sync_api import expect
 
-from pages.base_page import BasePage
+from pages.vendor_base_page import VendorBasePage
 
 
-class VendorSupportPage(BasePage):
+class VendorSupportPage(VendorBasePage):
     """Purpose: Encapsulates vendor support search, ticket form, upload, and details checks."""
 
     def open(self) -> None:

@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from playwright.sync_api import expect
 
-from pages.base_page import BasePage
+from pages.vendor_base_page import VendorBasePage
 
 
-class VendorTeamPage(BasePage):
+class VendorTeamPage(VendorBasePage):
     """Purpose: Encapsulates vendor team tabs, invites, direct adds, and member editing."""
 
     def open(self) -> None:
