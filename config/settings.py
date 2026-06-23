@@ -102,8 +102,6 @@ class Settings:
     user_email: str
     user_password: str
     authenticated_shell_text: str
-    admin_email: str | None
-    admin_password: str | None
     mcp_enabled: bool
     mcp_server_command: str | None
     mcp_server_args: tuple[str, ...]
@@ -166,9 +164,6 @@ def get_settings() -> Settings:
     Returns:
         Fully populated Settings dataclass.
 
-    Notes:
-        Vendor credentials override customer credentials when vendor variables
-        are present, enabling the same fixtures to run vendor portal tests.
     """
     env = CONFIG_MANAGER.load_dotenv_files()
     defaults = CONFIG_MANAGER.load_environment_defaults(env)
@@ -182,8 +177,8 @@ def get_settings() -> Settings:
     else:
         api_base_url = ConfigManager.join_url(base_url, "api/")
 
-    user_email = os.getenv("VENDOR_EMAIL") or os.getenv("CUSTOMER_EMAIL", "new_customer@yopmail.com")
-    user_password = os.getenv("VENDOR_PASSWORD") or os.getenv("CUSTOMER_PASSWORD", "Test@123")
+    user_email = os.getenv("CUSTOMER_EMAIL", "new_customer@yopmail.com")
+    user_password = os.getenv("CUSTOMER_PASSWORD", "Test@123")
 
     return Settings(
         env=env,
@@ -200,8 +195,6 @@ def get_settings() -> Settings:
         user_email=user_email,
         user_password=user_password,
         authenticated_shell_text=CONFIG_MANAGER.get_value("AUTHENTICATED_SHELL_TEXT", defaults) or "",
-        admin_email=os.getenv("ADMIN_EMAIL") or None,
-        admin_password=os.getenv("ADMIN_PASSWORD") or None,
         mcp_enabled=_as_bool(os.getenv("MCP_ENABLED"), _as_bool(defaults.get("mcp_enabled"), False)),
         mcp_server_command=CONFIG_MANAGER.get_value("MCP_SERVER_COMMAND", defaults),
         mcp_server_args=tuple(

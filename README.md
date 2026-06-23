@@ -75,18 +75,6 @@ pytest --headed-mode
 pytest --env staging
 ```
 
-Run the Vendor Portal suite:
-
-```powershell
-$env:ENV="vendor_staging"
-$env:VENDOR_EMAIL="<vendor email>"
-$env:VENDOR_PASSWORD="<vendor password>"
-pytest tests/vendor
-pytest tests/vendor -m smoke
-pytest tests/vendor -m crud
-pytest tests/vendor -n 2
-```
-
 Run in parallel:
 
 ```powershell
@@ -101,6 +89,10 @@ pytest --html=reports/html-report.html --self-contained-html
 pytest --alluredir=reports/allure-results
 allure serve reports/allure-results
 ```
+
+Report generation is intentionally explicit. The default `pytest` command keeps
+local and focused runs lightweight and avoids failures when shared report files
+are locked by another process.
 
 ## Framework Capabilities
 
@@ -137,23 +129,6 @@ Run MCP validation checks:
 ```powershell
 pytest tests/mcp -m mcp
 ```
-
-## Vendor Portal Coverage
-
-Vendor automation is organized under `tests/vendor` with page objects under `pages/vendor_*`.
-
-Covered vendor modules:
-
-- Dashboard navigation, KPI cards, and recent lead entry points.
-- My Leads create, read/details, update, search, empty-state, required-field, table, pagination, and row action coverage.
-- Demo Agents search and manage action availability.
-- Earnings status filters and commission table checks.
-- Coupons & Rates and Plans & Pricing read/action surfaces.
-- Team Management tabs, owner-visible controls, invite validation, direct-add form, and member editor availability.
-- Performance table checks.
-- Help & Support ticket validation, search/details, and attachment upload control.
-- Profile edit controls and change-password enable/validation behavior.
-- Session handling through reusable storage state, unauthenticated protected-route redirect, screenshots, HTML/Allure output, traces on failure, and xdist-compatible worker state.
 
 ## Maintenance Practices
 

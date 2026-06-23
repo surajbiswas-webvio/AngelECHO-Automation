@@ -5,7 +5,7 @@ from __future__ import annotations
 This module centralizes command-line options, environment resolution,
 Playwright lifecycle management, authenticated storage-state reuse, and
 failure artifacts. Keeping these fixtures in one place gives UI, API, smoke,
-regression, and vendor workflows the same runtime behavior.
+and regression workflows the same runtime behavior.
 """
 
 import os

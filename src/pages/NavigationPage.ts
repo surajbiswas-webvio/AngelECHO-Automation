@@ -16,7 +16,7 @@ export const primaryModules = [
   { name: 'Billing', path: '/billing', heading: /Billing/ },
   { name: 'Pricing', path: '/pricing', heading: /Cost Calculator/ },
   { name: 'Members', path: '/members', heading: /Members/ },
-  { name: 'Roles & Permissions', path: '/roles-permissions', heading: /Permissions For Admin/ },
+  { name: 'Roles & Permissions', path: '/roles-permissions', heading: /Permissions/ },
   { name: 'Setup Guides', path: '/setup-guides', heading: /Setup Guides/ },
   { name: 'Support', path: '/support', heading: /Support/ }
 ] as const;
