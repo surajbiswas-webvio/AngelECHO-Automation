@@ -9,6 +9,7 @@ api_helpers/            API clients for auth, agents, and backend setup
 config/                 Environment configuration and runtime settings
 data/                   JSON/YAML test data
 fixtures/               Reserved for domain-specific reusable fixtures
+mcp/                    Playwright MCP client, browser manager, and tools
 pages/                  Page Object Model classes and centralized locators
 tests/api/              API checks
 tests/e2e/              End-to-end workflows
@@ -74,18 +75,6 @@ pytest --headed-mode
 pytest --env staging
 ```
 
-Run the Vendor Portal suite:
-
-```powershell
-$env:ENV="vendor_staging"
-$env:VENDOR_EMAIL="<vendor email>"
-$env:VENDOR_PASSWORD="<vendor password>"
-pytest tests/vendor
-pytest tests/vendor -m smoke
-pytest tests/vendor -m crud
-pytest tests/vendor -n 2
-```
-
 Run in parallel:
 
 ```powershell
@@ -101,6 +90,10 @@ pytest --alluredir=reports/allure-results
 allure serve reports/allure-results
 ```
 
+Report generation is intentionally explicit. The default `pytest` command keeps
+local and focused runs lightweight and avoids failures when shared report files
+are locked by another process.
+
 ## Framework Capabilities
 
 - Playwright sync API with Pytest.
@@ -113,24 +106,29 @@ allure serve reports/allure-results
 - Retry support through `pytest-rerunfailures`.
 - Parallel execution through `pytest-xdist`.
 - API helper layer ready for backend setup and validation.
+- Optional Playwright MCP helper layer for page inspection, locator discovery, screenshots, and external MCP server calls.
 - GitHub Actions workflow included.
 
-## Vendor Portal Coverage
+## Playwright MCP
 
-Vendor automation is organized under `tests/vendor` with page objects under `pages/vendor_*`.
+MCP support lives under `mcp/` and is available through pytest fixtures:
 
-Covered vendor modules:
+```python
+def test_debug_dashboard(mcp_authenticated_browser_manager, mcp_tools):
+    page = mcp_authenticated_browser_manager.open_page("/dashboard")
+    debug_state = mcp_tools.debug_page_state(page)
+    assert debug_state["url"]
+```
 
-- Dashboard navigation, KPI cards, and recent lead entry points.
-- My Leads create, read/details, update, search, empty-state, required-field, table, pagination, and row action coverage.
-- Demo Agents search and manage action availability.
-- Earnings status filters and commission table checks.
-- Coupons & Rates and Plans & Pricing read/action surfaces.
-- Team Management tabs, owner-visible controls, invite validation, direct-add form, and member editor availability.
-- Performance table checks.
-- Help & Support ticket validation, search/details, and attachment upload control.
-- Profile edit controls and change-password enable/validation behavior.
-- Session handling through reusable storage state, unauthenticated protected-route redirect, screenshots, HTML/Allure output, traces on failure, and xdist-compatible worker state.
+Use `mcp_browser_manager` for unauthenticated pages and `mcp_authenticated_browser_manager` for pages that should reuse the framework's saved login state. Use `mcp_tools.navigate(page, "/path")` for framework-aware navigation, `mcp_tools.inspect_element(page, "selector")` to understand an element, `mcp_tools.discover_locators(page)` to find stable locator candidates, and `mcp_tools.capture_screenshot(page)` for MCP debugging screenshots.
+
+If your team runs an external Playwright MCP server, set `MCP_ENABLED=true`, `MCP_SERVER_COMMAND`, and optional `MCP_SERVER_ARGS`. If no server command is set, the local Playwright MCP helpers still work.
+
+Run MCP validation checks:
+
+```powershell
+pytest tests/mcp -m mcp
+```
 
 ## Maintenance Practices
 

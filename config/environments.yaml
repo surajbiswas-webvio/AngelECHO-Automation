@@ -5,18 +5,12 @@ staging: &staging
   browser: "chromium"
   headless: true
   slow_mo_ms: 0
+  authenticated_shell_text: "New Customer's Workspace"
+  mcp_enabled: false
+  mcp_screenshot_dir: "reports/mcp-screenshots"
 
 qa:
   <<: *staging
-
-vendor_staging:
-  base_url: "https://staging-vendor.webvio.in/"
-  api_base_url: "https://staging-api.angelecho.ai/v1"
-  default_timeout_ms: 15000
-  browser: "chromium"
-  headless: true
-  slow_mo_ms: 0
-  authenticated_shell_text: "Vendor Portal"
 
 prod:
   base_url: ""
@@ -25,3 +19,5 @@ prod:
   browser: "chromium"
   headless: true
   slow_mo_ms: 0
+  mcp_enabled: false
+  mcp_screenshot_dir: "reports/mcp-screenshots"
