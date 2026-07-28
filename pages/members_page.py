@@ -30,8 +30,7 @@ class MembersPage(BasePage):
 
     def search_members(self, value: str) -> None:
         """Search members by value and wait for client-side filtering; returns None."""
-        self.page.get_by_placeholder("Search Members...").fill(value)
-        self.page.wait_for_timeout(300)
+        self.search_by_placeholder("Search Members...", value)
 
     def expect_owner_visible(self, email: str) -> None:
         """Assert a member row for the owner email is visible; returns None."""
