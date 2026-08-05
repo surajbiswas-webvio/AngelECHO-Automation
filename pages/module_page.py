@@ -41,7 +41,10 @@ MODULES: tuple[ModuleDefinition, ...] = (
     ModuleDefinition("Members", "/members", "Members"),
     ModuleDefinition("Roles & Permissions", "/roles-permissions"),
     ModuleDefinition("Setup Guides", "/setup-guides", "Setup Guides"),
-    ModuleDefinition("Support", "/support", "Support", "No tickets found"),
+    # Support is a shared staging workspace and may legitimately contain
+    # existing tickets, so an empty-state assertion is not a stable smoke
+    # condition.  The heading still verifies that the module loaded.
+    ModuleDefinition("Support", "/support", "Support"),
 )
 
 
@@ -111,27 +114,6 @@ class ModulePage(BasePage):
             expect(self.page.get_by_role("heading", name=module.heading).first).to_be_visible()
         if module.empty_text:
             expect(self.page.get_by_text(module.empty_text, exact=False).first).to_be_visible()
-
-    def search(self, placeholder: str, value: str) -> None:
-        """
-        Purpose:
-            Enters text into a module search field.
-
-        Why Needed:
-            Multiple modules expose search inputs with different placeholders.
-
-        Args:
-            placeholder: Placeholder text identifying the search field.
-            value: Search value to enter.
-
-        Returns:
-            None.
-
-        Notes:
-            Includes a short debounce wait for client-side filtering.
-        """
-        self.page.get_by_placeholder(placeholder).fill(value)
-        self.page.wait_for_timeout(300)
 
     def expect_table_headers(self, *headers: str) -> None:
         """

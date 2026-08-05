@@ -27,5 +27,4 @@ class OutboundPage(BasePage):
 
     def search_campaigns(self, value: str) -> None:
         """Search campaigns by value and wait for client-side filtering."""
-        self.page.get_by_placeholder("Search campaigns...").fill(value)
-        self.page.wait_for_timeout(300)
+        self.search_by_placeholder("Search campaigns...", value)

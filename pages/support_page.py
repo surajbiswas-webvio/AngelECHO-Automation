@@ -32,8 +32,7 @@ class SupportPage(BasePage):
 
     def search_tickets(self, value: str) -> None:
         """Search tickets by value and wait for client-side filtering."""
-        self.page.get_by_placeholder("Search tickets...").fill(value)
-        self.page.wait_for_timeout(300)
+        self.search_by_placeholder("Search tickets...", value)
 
     def expect_empty_state(self) -> None:
         """Assert the support ticket empty-state message is visible."""

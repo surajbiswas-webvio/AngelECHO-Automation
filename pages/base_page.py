@@ -174,28 +174,6 @@ class BasePage:
         expect(field).to_be_visible()
         field.fill(value)
 
-    def select_option(self, selector: str, value: str) -> None:
-        """
-        Purpose:
-            Selects an option in a visible native select field.
-
-        Why Needed:
-            Settings and form workflows use dropdown controls repeatedly.
-
-        Args:
-            selector: CSS selector for the select element.
-            value: Option value to select.
-
-        Returns:
-            None.
-
-        Notes:
-            Designed for native select elements, not custom combobox widgets.
-        """
-        field = self.page.locator(selector).first
-        expect(field).to_be_visible()
-        field.select_option(value=value)
-
     def click_button(self, name: str) -> None:
         """
         Purpose:
@@ -215,24 +193,27 @@ class BasePage:
         """
         self.click(self.page.get_by_role("button", name=name))
 
-    def visible_text(self, text: str) -> Locator:
+    def search_by_placeholder(self, placeholder: str, value: str) -> None:
         """
         Purpose:
-            Builds a locator for visible text content.
+            Fills a search field by placeholder and waits for filtering.
 
         Why Needed:
-            Page assertions often need a reusable text locator.
+            Multiple modules use similar search patterns with client-side
+            filtering delays.
 
         Args:
-            text: Text fragment to locate.
+            placeholder: Placeholder text identifying the search field.
+            value: Search value to enter.
 
         Returns:
-            Playwright Locator matching text non-exactly.
+            None.
 
         Notes:
-            Visibility must be asserted separately by callers.
+            Includes a short debounce wait for client-side filtering.
         """
-        return self.page.get_by_text(text, exact=False)
+        self.page.get_by_placeholder(placeholder).fill(value)
+        self.page.wait_for_timeout(300)
 
     def expect_visible(self, target: str | Locator) -> None:
         """
@@ -293,26 +274,6 @@ class BasePage:
             Escapes the fragment before converting it to a regular expression.
         """
         expect(self.page).to_have_url(re.compile(f".*{re.escape(fragment)}.*"))
-
-    def open_combobox_by_text(self, text: str) -> None:
-        """
-        Purpose:
-            Opens a custom combobox or menu trigger by exact visible text.
-
-        Why Needed:
-            Some application controls are rendered as buttons or text triggers
-            instead of native select elements.
-
-        Args:
-            text: Exact trigger text.
-
-        Returns:
-            None.
-
-        Notes:
-            Option selection is left to the calling workflow.
-        """
-        self.page.get_by_text(text, exact=True).click()
 
     def close_dialog(self) -> None:
         """
