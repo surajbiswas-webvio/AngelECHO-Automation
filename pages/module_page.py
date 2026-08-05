@@ -41,7 +41,10 @@ MODULES: tuple[ModuleDefinition, ...] = (
     ModuleDefinition("Members", "/members", "Members"),
     ModuleDefinition("Roles & Permissions", "/roles-permissions"),
     ModuleDefinition("Setup Guides", "/setup-guides", "Setup Guides"),
-    ModuleDefinition("Support", "/support", "Support", "No tickets found"),
+    # Support is a shared staging workspace and may legitimately contain
+    # existing tickets, so an empty-state assertion is not a stable smoke
+    # condition.  The heading still verifies that the module loaded.
+    ModuleDefinition("Support", "/support", "Support"),
 )
 
 

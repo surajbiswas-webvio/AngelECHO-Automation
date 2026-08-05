@@ -122,7 +122,10 @@ class AIAgentsPage(BasePage):
         expect(row.first).to_be_visible()
         row.first.get_by_role("button", name="Edit").click()
         self.wait_for_page_ready()
-        self.page.wait_for_url("**/agent-editor", timeout=self.settings.default_timeout_ms)
+        # The editor route includes the newly-created agent ID (for example,
+        # ``/agent-editor/f5999a48ae5a4b62``), so the route assertion must
+        # allow a trailing path segment.
+        self.page.wait_for_url("**/agent-editor/**", timeout=self.settings.default_timeout_ms)
         expect(self.page.get_by_role("heading", name=name)).to_be_visible()
 
     def update_prompt(self, name: str, prompt: str) -> None:
