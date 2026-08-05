@@ -122,6 +122,9 @@ class AIAgentsPage(BasePage):
         expect(row.first).to_be_visible()
         row.first.get_by_role("button", name="Edit").click()
         self.wait_for_page_ready()
+        # The editor route includes the newly-created agent ID (for example,
+        # ``/agent-editor/f5999a48ae5a4b62``), so the route assertion must
+        # allow a trailing path segment.
         self.page.wait_for_url("**/agent-editor/**", timeout=self.settings.default_timeout_ms)
         expect(self.page.get_by_role("heading", name=name)).to_be_visible()
 
@@ -171,13 +174,6 @@ class AIAgentsPage(BasePage):
         self.search_agent(name)
         expect(self.page.get_by_role("row").filter(has_text=name).first).not_to_be_visible()
 
-    def expect_validation_error(self, message: str | None = None) -> None:
-        """Assert a validation error is visible, optionally with expected text."""
-        error = self.page.locator("[role='alert'], .invalid-feedback, .text-danger, [data-testid*='error']").first
-        expect(error).to_be_visible()
-        if message:
-            expect(error).to_contain_text(message)
-
     def expect_create_disabled_without_name(self) -> None:
         """Verify the create flow blocks progression when the name is missing."""
         self.open()
@@ -187,14 +183,14 @@ class AIAgentsPage(BasePage):
         expect(self.page.get_by_role("heading", name="Create a new agent")).to_be_visible()
         expect(self.page.get_by_placeholder("Enter a agent name")).to_be_visible()
 
-    def configure_stt(self, provider: str) -> None:
-        """Open speech settings when available; provider is reserved for future selection."""
+    def configure_stt(self) -> None:
+        """Open speech settings when available."""
         button = self.page.get_by_role("button", name="Speech Settings")
         if button.count() > 0:
             button.click()
 
-    def configure_tts(self, provider: str, voice: str | None = None) -> None:
-        """Verify text-to-speech settings remain saveable; parameters support future options."""
+    def configure_tts(self) -> None:
+        """Verify text-to-speech settings remain saveable."""
         expect(self.page.get_by_role("button", name=AGENT.save_button_name).or_(
             self.page.get_by_role("button", name=AGENT.update_button_name)
         ).first).to_be_visible()

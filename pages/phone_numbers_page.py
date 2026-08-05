@@ -32,5 +32,4 @@ class PhoneNumbersPage(BasePage):
 
     def search_numbers(self, value: str) -> None:
         """Search phone numbers by value and wait for client-side filtering."""
-        self.page.get_by_placeholder("Search numbers...").fill(value)
-        self.page.wait_for_timeout(300)
+        self.search_by_placeholder("Search numbers...", value)

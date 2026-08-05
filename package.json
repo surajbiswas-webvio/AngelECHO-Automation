@@ -4,6 +4,7 @@
   "private": true,
   "description": "TypeScript Playwright automation framework for AngelECHO customer portal.",
   "scripts": {
+    "typecheck": "tsc --noEmit",
     "test": "playwright test",
     "test:smoke": "playwright test --grep @smoke",
     "test:dashboard": "playwright test tests-ts/dashboard.spec.ts",
@@ -12,7 +13,8 @@
     "report": "playwright show-report reports/playwright-html"
   },
   "devDependencies": {
-    "@playwright/test": "^1.45.0",
+    "@types/node": "^20.0.0",
+    "@playwright/test": "1.55.1",
     "typescript": "^5.5.0"
   }
 }

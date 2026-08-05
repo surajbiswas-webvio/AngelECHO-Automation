@@ -1,5 +1,6 @@
 .env
 .venv/
+node_modules/
 __pycache__/
 *.pyc
 .pytest_cache/
@@ -14,4 +15,3 @@ storage_states/*
 !storage_states/.gitkeep
 test-results/
 playwright-report/
-
